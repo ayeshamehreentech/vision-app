@@ -26,7 +26,8 @@ def load_vision_model():
     if not os.path.exists("retina_model.h5"):
         st.error("Model file not found. Please place 'retina_model.h5' in the project folder.")
         return None
-    return tf.keras.models.load_model("retina_model.h5", compile=False)
+      //return tf.keras.models.load_model("retina_model.h5", compile=False)
+    return tf.keras.models.load_model("retina_model.h5", compile=False, safe_mode=False)
 
 model = load_vision_model()
 
