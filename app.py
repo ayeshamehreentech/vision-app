@@ -50,9 +50,9 @@ def load_vision_model():
 
         model = tf.keras.models.load_model(
             "retina_model.h5",
-            compile=False,
-            safe_mode=False  # 🔥 fixes many compatibility issues
+            compile=False
         )
+
         return model
 
     except Exception as e:
