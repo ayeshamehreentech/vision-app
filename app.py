@@ -45,12 +45,13 @@ st.markdown(
 def load_vision_model():
     try:
         if not os.path.exists("retina_model.h5"):
-            st.error("❌ Model file not found. Add 'retina_model.h5' to project folder.")
+            st.error("❌ Model file not found.")
             return None
 
         model = tf.keras.models.load_model(
             "retina_model.h5",
-            compile=False
+            compile=False,
+            safe_mode=False   # ✅ works with newer models (TF ≥ 2.13)
         )
 
         return model
@@ -61,6 +62,7 @@ def load_vision_model():
 
 model = load_vision_model()
 
+# --- CLASS LABELS ---
 CLASS_NAMES = ['AMD', 'CNV', 'CSR', 'DME', 'DR', 'DRUSEN', 'GLAUCOMA', 'MH']
 
 # --- PREDICTION FUNCTION ---
@@ -141,21 +143,3 @@ if file and model:
 # --- FOOTER ---
 st.markdown("---")
 st.caption("Developed for Research & Educational Purposes | VisionAI 2026")
-@st.cache_resource
-def load_vision_model():
-    try:
-        if not os.path.exists("retina_model.h5"):
-            st.error("❌ Model file not found.")
-            return None
-
-        model = tf.keras.models.load_model(
-            "retina_model.h5",
-            compile=False,
-            safe_mode=False
-        )
-
-        return model
-
-    except Exception as e:
-        st.error(f"❌ Model failed to load: {str(e)}")
-        return None
