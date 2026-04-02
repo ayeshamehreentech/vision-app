@@ -1,10 +1,14 @@
 import streamlit as st
 import tensorflow as tf
+import keras
 from PIL import Image, ImageOps
 import numpy as np
 import plotly.express as px
 from streamlit_image_comparison import image_comparison
 import os
+
+# 🔥 IMPORTANT FIX (enables old model compatibility)
+keras.config.enable_legacy_serialization()
 
 # --- PAGE SETUP ---
 st.set_page_config(
@@ -13,7 +17,7 @@ st.set_page_config(
     page_icon="👁️"
 )
 
-# --- CUSTOM CSS ---
+# --- UI ---
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; }
@@ -50,8 +54,7 @@ def load_vision_model():
 
         model = tf.keras.models.load_model(
             "retina_model.h5",
-            compile=False,
-            safe_mode=False   # ✅ works with newer models (TF ≥ 2.13)
+            compile=False
         )
 
         return model
@@ -62,24 +65,23 @@ def load_vision_model():
 
 model = load_vision_model()
 
-# --- CLASS LABELS ---
+# --- CLASSES ---
 CLASS_NAMES = ['AMD', 'CNV', 'CSR', 'DME', 'DR', 'DRUSEN', 'GLAUCOMA', 'MH']
 
-# --- PREDICTION FUNCTION ---
+# --- PREDICTION ---
 def get_prediction(image, model):
     img = ImageOps.fit(image, (224, 224), Image.LANCZOS)
     img_array = np.asarray(img).astype('float32') / 255.0
 
-    # Ensure 3 channels
     if len(img_array.shape) == 2:
         img_array = np.stack((img_array,) * 3, axis=-1)
 
     img_array = np.expand_dims(img_array, axis=0)
-
     prediction = model.predict(img_array, verbose=0)[0]
+
     return prediction
 
-# --- FILE UPLOAD ---
+# --- UPLOAD ---
 file = st.file_uploader("📤 Upload Patient OCT Image", type=["png", "jpg", "jpeg"])
 
 if file and model:
@@ -89,13 +91,12 @@ if file and model:
     label = CLASS_NAMES[np.argmax(probs)]
     conf = np.max(probs) * 100
 
-    # --- IMAGE COMPARISON ---
+    # --- COMPARISON ---
     st.subheader("🖱️ Interactive Comparison Slider")
 
-    healthy_path = "healthy.jpg"
+    if os.path.exists("healthy.jpg"):
+        ref_img = Image.open("healthy.jpg")
 
-    if os.path.exists(healthy_path):
-        ref_img = Image.open(healthy_path)
         image_comparison(
             img1=ImageOps.fit(img, (1000, 450)),
             img2=ImageOps.fit(ref_img, (1000, 450)),
@@ -105,7 +106,7 @@ if file and model:
             in_memory=True
         )
     else:
-        st.warning("⚠️ Healthy reference image not found.")
+        st.warning("Healthy reference image not found.")
         st.image(img, width=500)
 
     # --- RESULTS ---
@@ -114,21 +115,19 @@ if file and model:
 
     with col1:
         st.markdown(f"""
-            <div class="diagnosis-card">
-                <h3 style="color:#64748b;">DETECTION RESULT</h3>
-                <h1 style="color:#1e3a8a;">{label}</h1>
-                <p>Confidence: <b>{conf:.2f}%</b></p>
-            </div>
+        <div class="diagnosis-card">
+            <h3>DETECTION RESULT</h3>
+            <h1>{label}</h1>
+            <p>Confidence: <b>{conf:.2f}%</b></p>
+        </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("### 📋 Clinical Insight")
-
         if label in ["DME", "DR"]:
-            st.info("Fluid accumulation and retinal swelling detected.")
+            st.info("Fluid accumulation detected.")
         elif label in ["AMD", "DRUSEN"]:
-            st.info("Presence of drusen deposits or retinal elevation.")
+            st.info("Drusen deposits detected.")
         elif label == "MH":
-            st.info("Macular hole detected in central retina.")
+            st.info("Macular hole detected.")
         else:
             st.info(f"Pattern consistent with {label}.")
 
