@@ -1,10 +1,8 @@
-streamlit==1.32.0
-tensorflow-cpu==2.15.0
-keras==2.15.0
+streamlit
+tensorflow-cpu==2.10.0
 numpy==1.23.5
-pillow==10.2.0
-plotly==5.18.0
-streamlit-image-comparison==0.0.4
-opencv-python-headless==4.9.0.80
-python-multipart==0.0.6
-h5py==3.10.0
+pillow
+plotly
+streamlit-image-comparison
+opencv-python-headless
+python-multipart
