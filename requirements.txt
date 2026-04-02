@@ -1,0 +1,7 @@
+streamlit
+tensorflow-cpu
+numpy
+pillow
+plotly
+streamlit-image-comparison
+opencv-python-headless
