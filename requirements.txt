@@ -2,7 +2,7 @@ streamlit
 tensorflow-cpu==2.12.0
 numpy==1.23.5
 pillow
-opencv-python-headless
 plotly
 streamlit-image-comparison
+opencv-python-headless
 python-multipart
