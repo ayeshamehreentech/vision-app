@@ -7,26 +7,57 @@ from streamlit_image_comparison import image_comparison
 import os
 
 # --- PAGE SETUP ---
-st.set_page_config(page_title="VisionAI | Precision Diagnostics", layout="wide", page_icon="👁️")
+st.set_page_config(
+    page_title="VisionAI | Precision Diagnostics",
+    layout="wide",
+    page_icon="👁️"
+)
 
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
     .stApp { background-color: #f8fafc; }
-    .main-header { background: linear-gradient(90deg, #0f172a, #1e293b); color: white; padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 2rem; }
-    .diagnosis-card { background: white; padding: 25px; border-radius: 12px; border-left: 8px solid #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .main-header {
+        background: linear-gradient(90deg, #0f172a, #1e293b);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .diagnosis-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        border-left: 8px solid #3b82f6;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>',
+    unsafe_allow_html=True
+)
 
 # --- LOAD MODEL ---
 @st.cache_resource
 def load_vision_model():
-    if not os.path.exists("retina_model.h5"):
-        st.error("Model file not found. Please place 'retina_model.h5' in the project folder.")
+    try:
+        if not os.path.exists("retina_model.h5"):
+            st.error("❌ Model file not found. Add 'retina_model.h5' to project folder.")
+            return None
+
+        model = tf.keras.models.load_model(
+            "retina_model.h5",
+            compile=False,
+            safe_mode=False  # 🔥 fixes many compatibility issues
+        )
+        return model
+
+    except Exception as e:
+        st.error(f"❌ Model failed to load: {str(e)}")
         return None
-    return tf.keras.models.load_model("retina_model.h5", compile=False)
 
 model = load_vision_model()
 
@@ -35,13 +66,14 @@ CLASS_NAMES = ['AMD', 'CNV', 'CSR', 'DME', 'DR', 'DRUSEN', 'GLAUCOMA', 'MH']
 # --- PREDICTION FUNCTION ---
 def get_prediction(image, model):
     img = ImageOps.fit(image, (224, 224), Image.LANCZOS)
-    img_array = np.asarray(img).astype('float32')
+    img_array = np.asarray(img).astype('float32') / 255.0
 
     # Ensure 3 channels
     if len(img_array.shape) == 2:
         img_array = np.stack((img_array,) * 3, axis=-1)
 
     img_array = np.expand_dims(img_array, axis=0)
+
     prediction = model.predict(img_array, verbose=0)[0]
     return prediction
 
@@ -71,10 +103,10 @@ if file and model:
             in_memory=True
         )
     else:
-        st.warning("Healthy reference image not found.")
+        st.warning("⚠️ Healthy reference image not found.")
         st.image(img, width=500)
 
-    # --- RESULTS SECTION ---
+    # --- RESULTS ---
     st.markdown("---")
     col1, col2 = st.columns([1, 1.5])
 
@@ -88,6 +120,7 @@ if file and model:
         """, unsafe_allow_html=True)
 
         st.markdown("### 📋 Clinical Insight")
+
         if label in ["DME", "DR"]:
             st.info("Fluid accumulation and retinal swelling detected.")
         elif label in ["AMD", "DRUSEN"]:
@@ -108,4 +141,3 @@ if file and model:
 # --- FOOTER ---
 st.markdown("---")
 st.caption("Developed for Research & Educational Purposes | VisionAI 2026")
-
