@@ -1,14 +1,16 @@
 import streamlit as st
 import tensorflow as tf
-import keras
+# ❌ REMOVE standalone keras import
+# import keras
+
 from PIL import Image, ImageOps
 import numpy as np
 import plotly.express as px
 from streamlit_image_comparison import image_comparison
 import os
 
-# 🔥 IMPORTANT FIX (enables old model compatibility)
-keras.config.enable_legacy_serialization()
+# ❌ REMOVE THIS LINE (causes crash)
+# keras.config.enable_legacy_serialization()
 
 # --- PAGE SETUP ---
 st.set_page_config(
