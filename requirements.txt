@@ -1,8 +1,10 @@
 streamlit==1.32.0
-tensorflow==2.16.1
-keras==3.0.5
-numpy==1.26.4
+tensorflow==2.15.0
+keras==2.15.0
+numpy==1.23.5
 pillow
 plotly
 streamlit-image-comparison
 opencv-python-headless
+python-multipart
+h5py==3.8.0

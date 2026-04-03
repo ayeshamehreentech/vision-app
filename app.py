@@ -33,8 +33,16 @@ st.markdown(
 # --- MODEL LOADER (ROBUST) ---
 @st.cache_resource
 def load_vision_model():
-    keras_path = "retina_model.keras"
-    h5_path = "retina_model.h5"
+    try:
+        model = tf.keras.models.load_model(
+            "retina_model.keras",
+            compile=False,
+            safe_mode=False   # 🔥 VERY IMPORTANT FIX
+        )
+        return model
+    except Exception as e:
+        st.error(f"❌ Error loading model: {e}")
+        return None
 
     # Try .keras
     if os.path.exists(keras_path):
