@@ -1,8 +1,7 @@
 streamlit
-tensorflow-cpu==2.10.0
-numpy==1.23.5
+tensorflow==2.15.0
+numpy
 pillow
 plotly
 streamlit-image-comparison
 opencv-python-headless
-python-multipart

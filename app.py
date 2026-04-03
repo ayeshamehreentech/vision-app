@@ -7,7 +7,11 @@ from streamlit_image_comparison import image_comparison
 import os
 
 # --- PAGE SETUP ---
-st.set_page_config(page_title="VisionAI | Precision Diagnostics", layout="wide", page_icon="👁️")
+st.set_page_config(
+    page_title="VisionAI | Precision Diagnostics",
+    layout="wide",
+    page_icon="👁️"
+)
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -18,37 +22,52 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>',
+    unsafe_allow_html=True
+)
 
 # --- LOAD MODEL ---
 @st.cache_resource
 def load_vision_model():
-    if not os.path.exists("retina_model.h5"):
-        st.error("Model file not found. Please place 'retina_model.h5' in the project folder.")
+    model_path = "retina_model.keras"
+
+    if not os.path.exists(model_path):
+        st.error("❌ Model file not found. Please add 'retina_model.keras' to the project folder.")
         return None
-    return tf.keras.models.load_model("retina_model.h5", compile=False)
+
+    try:
+        model = tf.keras.models.load_model(model_path, compile=False)
+        return model
+    except Exception as e:
+        st.error(f"❌ Error loading model: {e}")
+        return None
 
 model = load_vision_model()
 
+# --- CLASS LABELS ---
 CLASS_NAMES = ['AMD', 'CNV', 'CSR', 'DME', 'DR', 'DRUSEN', 'GLAUCOMA', 'MH']
 
 # --- PREDICTION FUNCTION ---
 def get_prediction(image, model):
-    img = ImageOps.fit(image, (224, 224), Image.LANCZOS)
+    img = ImageOps.fit(image, (224, 224), Image.Resampling.LANCZOS)
     img_array = np.asarray(img).astype('float32')
 
     # Ensure 3 channels
     if len(img_array.shape) == 2:
         img_array = np.stack((img_array,) * 3, axis=-1)
 
+    # Normalize
+    img_array = img_array / 255.0
     img_array = np.expand_dims(img_array, axis=0)
+
     prediction = model.predict(img_array, verbose=0)[0]
     return prediction
 
 # --- FILE UPLOAD ---
 file = st.file_uploader("📤 Upload Patient OCT Image", type=["png", "jpg", "jpeg"])
 
-if file and model:
+if file is not None and model is not None:
     img = Image.open(file)
 
     probs = get_prediction(img, model)
@@ -71,7 +90,7 @@ if file and model:
             in_memory=True
         )
     else:
-        st.warning("Healthy reference image not found.")
+        st.warning("⚠️ Healthy reference image not found.")
         st.image(img, width=500)
 
     # --- RESULTS SECTION ---
