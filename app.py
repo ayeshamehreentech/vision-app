@@ -13,6 +13,9 @@ st.set_page_config(
     page_icon="👁️"
 )
 
+# --- DEBUG (REMOVE LATER) ---
+st.write("TensorFlow:", tf.__version__)
+
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
@@ -27,25 +30,41 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- LOAD MODEL (FIXED) ---
+# --- MODEL LOADER (ROBUST) ---
 @st.cache_resource
 def load_vision_model():
-    model_path = "retina_model.keras"
+    keras_path = "retina_model.keras"
+    h5_path = "retina_model.h5"
 
-    if not os.path.exists(model_path):
-        st.error("❌ Model file not found. Add 'retina_model.keras' to project folder.")
-        return None
+    # Try .keras
+    if os.path.exists(keras_path):
+        try:
+            st.info("📦 Loading .keras model...")
+            model = tf.keras.models.load_model(
+                keras_path,
+                compile=False,
+                safe_mode=False
+            )
+            st.success("✅ .keras model loaded")
+            return model
+        except Exception as e:
+            st.warning(f"⚠️ .keras failed: {e}")
 
-    try:
-        model = tf.keras.models.load_model(
-            model_path,
-            compile=False,
-            safe_mode=False   # 🔥 FIX for your error
-        )
-        return model
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
-        return None
+    # Fallback .h5
+    if os.path.exists(h5_path):
+        try:
+            st.info("📦 Loading .h5 model...")
+            model = tf.keras.models.load_model(
+                h5_path,
+                compile=False
+            )
+            st.success("✅ .h5 model loaded")
+            return model
+        except Exception as e:
+            st.error(f"❌ .h5 failed: {e}")
+
+    st.error("❌ No working model found.")
+    return None
 
 model = load_vision_model()
 
@@ -57,11 +76,9 @@ def get_prediction(image, model):
     img = ImageOps.fit(image, (224, 224), Image.Resampling.LANCZOS)
     img_array = np.asarray(img).astype('float32')
 
-    # Ensure 3 channels
     if len(img_array.shape) == 2:
         img_array = np.stack((img_array,) * 3, axis=-1)
 
-    # Normalize
     img_array = img_array / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
