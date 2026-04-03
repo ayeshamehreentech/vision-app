@@ -27,17 +27,21 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- LOAD MODEL ---
+# --- LOAD MODEL (FIXED) ---
 @st.cache_resource
 def load_vision_model():
     model_path = "retina_model.keras"
 
     if not os.path.exists(model_path):
-        st.error("❌ Model file not found. Please add 'retina_model.keras' to the project folder.")
+        st.error("❌ Model file not found. Add 'retina_model.keras' to project folder.")
         return None
 
     try:
-        model = tf.keras.models.load_model(model_path, compile=False)
+        model = tf.keras.models.load_model(
+            model_path,
+            compile=False,
+            safe_mode=False   # 🔥 FIX for your error
+        )
         return model
     except Exception as e:
         st.error(f"❌ Error loading model: {e}")
@@ -93,7 +97,7 @@ if file is not None and model is not None:
         st.warning("⚠️ Healthy reference image not found.")
         st.image(img, width=500)
 
-    # --- RESULTS SECTION ---
+    # --- RESULTS ---
     st.markdown("---")
     col1, col2 = st.columns([1, 1.5])
 
