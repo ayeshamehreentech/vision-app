@@ -7,14 +7,7 @@ from streamlit_image_comparison import image_comparison
 import os
 
 # --- PAGE SETUP ---
-st.set_page_config(
-    page_title="VisionAI | Precision Diagnostics",
-    layout="wide",
-    page_icon="👁️"
-)
-
-# --- DEBUG (REMOVE LATER) ---
-st.write("TensorFlow:", tf.__version__)
+st.set_page_config(page_title="VisionAI | Precision Diagnostics", layout="wide", page_icon="👁️")
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -25,78 +18,37 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="main-header"><h1>👁️ VisionAI: Advanced OCT Analysis</h1></div>', unsafe_allow_html=True)
 
-# --- MODEL LOADER (ROBUST) ---
+# --- LOAD MODEL ---
 @st.cache_resource
 def load_vision_model():
-    try:
-        model = tf.keras.models.load_model(
-            "retina_model.keras",
-            compile=False,
-            safe_mode=False   # 🔥 VERY IMPORTANT FIX
-        )
-        return model
-    except Exception as e:
-        st.error(f"❌ Error loading model: {e}")
+    if not os.path.exists("retina_model.h5"):
+        st.error("Model file not found. Please place 'retina_model.h5' in the project folder.")
         return None
-
-    # Try .keras
-    if os.path.exists(keras_path):
-        try:
-            st.info("📦 Loading .keras model...")
-            model = tf.keras.models.load_model(
-                keras_path,
-                compile=False,
-                safe_mode=False
-            )
-            st.success("✅ .keras model loaded")
-            return model
-        except Exception as e:
-            st.warning(f"⚠️ .keras failed: {e}")
-
-    # Fallback .h5
-    if os.path.exists(h5_path):
-        try:
-            st.info("📦 Loading .h5 model...")
-            model = tf.keras.models.load_model(
-                h5_path,
-                compile=False
-            )
-            st.success("✅ .h5 model loaded")
-            return model
-        except Exception as e:
-            st.error(f"❌ .h5 failed: {e}")
-
-    st.error("❌ No working model found.")
-    return None
+    return tf.keras.models.load_model("retina_model.h5", compile=False)
 
 model = load_vision_model()
 
-# --- CLASS LABELS ---
 CLASS_NAMES = ['AMD', 'CNV', 'CSR', 'DME', 'DR', 'DRUSEN', 'GLAUCOMA', 'MH']
 
 # --- PREDICTION FUNCTION ---
 def get_prediction(image, model):
-    img = ImageOps.fit(image, (224, 224), Image.Resampling.LANCZOS)
+    img = ImageOps.fit(image, (224, 224), Image.LANCZOS)
     img_array = np.asarray(img).astype('float32')
 
+    # Ensure 3 channels
     if len(img_array.shape) == 2:
         img_array = np.stack((img_array,) * 3, axis=-1)
 
-    img_array = img_array / 255.0
     img_array = np.expand_dims(img_array, axis=0)
-
     prediction = model.predict(img_array, verbose=0)[0]
     return prediction
 
 # --- FILE UPLOAD ---
 file = st.file_uploader("📤 Upload Patient OCT Image", type=["png", "jpg", "jpeg"])
 
-if file is not None and model is not None:
+if file and model:
     img = Image.open(file)
 
     probs = get_prediction(img, model)
@@ -119,10 +71,10 @@ if file is not None and model is not None:
             in_memory=True
         )
     else:
-        st.warning("⚠️ Healthy reference image not found.")
+        st.warning("Healthy reference image not found.")
         st.image(img, width=500)
 
-    # --- RESULTS ---
+    # --- RESULTS SECTION ---
     st.markdown("---")
     col1, col2 = st.columns([1, 1.5])
 
